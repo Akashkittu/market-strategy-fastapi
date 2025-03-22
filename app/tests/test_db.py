@@ -1,5 +1,3 @@
-# app/tests/test_db.py
-
 import unittest
 import asyncio
 from app.database import prisma, connect_db, disconnect_db

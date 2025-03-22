@@ -1,5 +1,3 @@
-# app/tests/test_strategy.py
-
 import unittest
 import pandas as pd
 from datetime import datetime, timedelta

@@ -1,5 +1,3 @@
-# app/tests/test_api.py
-
 import unittest
 from httpx import AsyncClient, ASGITransport
 from app.main import app

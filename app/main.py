@@ -1,5 +1,3 @@
-# app/main.py
-
 from fastapi import FastAPI, HTTPException
 from prisma import Prisma
 from .database import prisma, connect_db, disconnect_db
@@ -9,23 +7,23 @@ from .strategy import (
     moving_average_crossover_strategy,
     evaluate_strategy_performance
 )
+
+app = FastAPI()
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Invsto FastAPI!"}
 app = FastAPI(
     title="Invsto Assignment",
     description="FastAPI + Prisma + PostgreSQL for Candle Data",
     version="1.0.0"
 )
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Invsto FastAPI!"}
 
-
-# -- Connect & Disconnect DB on Startup/Shutdown --
 @app.on_event("startup")
 async def startup_event():
-    await connect_db()  # Existing function
-    if not prisma.is_connected():  # ✅ Check if already connected
-        await prisma.connect()  # ✅ Ensure Prisma is connected
+    await connect_db()  
+    if not prisma.is_connected():  
+        await prisma.connect()  
 
 
 @app.on_event("shutdown")
@@ -40,12 +38,12 @@ async def get_data():
     """
     Returns all candle records from the database, sorted by datetime.
     """
-    if not prisma.is_connected():  # ✅ Avoid redundant connection
-        await prisma.connect()  # ✅ Ensure connection before fetching
+    if not prisma.is_connected():  
+        await prisma.connect()  
 
     records = await prisma.pricedata.find_many(order={'datetime': 'asc'})
 
-    await prisma.disconnect()  # ✅ Disconnect after fetching
+    await prisma.disconnect()  
 
     if not records:
         raise HTTPException(status_code=404, detail="No price data found")
