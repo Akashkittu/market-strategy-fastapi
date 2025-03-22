@@ -9,16 +9,16 @@ from .strategy import (
     moving_average_crossover_strategy,
     evaluate_strategy_performance
 )
-app = FastAPI()
-
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Invsto FastAPI!"}
 app = FastAPI(
     title="Invsto Assignment",
     description="FastAPI + Prisma + PostgreSQL for Candle Data",
     version="1.0.0"
 )
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Invsto FastAPI!"}
+
 
 # -- Connect & Disconnect DB on Startup/Shutdown --
 @app.on_event("startup")

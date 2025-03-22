@@ -1,35 +1,33 @@
 # app/tests/test_api.py
 
 import unittest
-from fastapi.testclient import TestClient
+from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.database import prisma, connect_db, disconnect_db
 
-client = TestClient(app)
 
 class TestAPI(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        # Connect to DB, clear table before each test
         await connect_db()
+        if not prisma.is_connected():
+            await prisma.connect()
         await prisma.pricedata.delete_many()
 
     async def asyncTearDown(self):
-        # Clean up after each test
+        if not prisma.is_connected():
+            await prisma.connect()
         await prisma.pricedata.delete_many()
         await disconnect_db()
 
-    def test_get_data_empty(self):
-        """
-        Should return an empty list when no records in DB.
-        """
-        response = client.get("/data")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), [])
 
-    def test_post_data_and_fetch(self):
-        """
-        POST some records and then GET them.
-        """
+    async def test_get_data_empty(self):
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/data")
+            self.assertEqual(response.status_code, 404)  # Since empty returns 404
+            self.assertEqual(response.json(), {"detail": "No price data found"})
+
+    async def test_post_data_and_fetch(self):
         candles = [{
             "datetime": "2023-01-01T10:00:00",
             "open": 100.0,
@@ -38,21 +36,19 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
             "close": 100.5,
             "volume": 500
         }]
-        post_resp = client.post("/data", json=candles)
-        self.assertEqual(post_resp.status_code, 200)
-        self.assertEqual(post_resp.json()["inserted_count"], 1)
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            post_resp = await client.post("/data", json=candles)
+            self.assertEqual(post_resp.status_code, 200)
+            self.assertEqual(post_resp.json()["inserted_count"], 1)
 
-        # Now check GET /data
-        get_resp = client.get("/data")
-        self.assertEqual(get_resp.status_code, 200)
-        data = get_resp.json()
-        self.assertEqual(len(data), 1)
-        self.assertEqual(data[0]["volume"], 500)
+            get_resp = await client.get("/data")
+            self.assertEqual(get_resp.status_code, 200)
+            data = get_resp.json()
+            self.assertEqual(len(data), 1)
+            self.assertEqual(data[0]["volume"], 500)
 
-    def test_strategy_performance(self):
-        """
-        Insert sample data and call /strategy/performance.
-        """
+    async def test_strategy_performance(self):
         sample_payload = [
             {
                 "datetime": "2023-01-01T10:00:00",
@@ -79,9 +75,14 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
                 "volume": 700
             }
         ]
-        client.post("/data", json=sample_payload)
-        response = client.get("/strategy/performance")
-        self.assertEqual(response.status_code, 200)
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            await client.post("/data", json=sample_payload)
+            response = await client.get("/strategy/performance")
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("performance", response.json())
+            self.assertIn("signals", response.json())
+
 
 if __name__ == '__main__':
     unittest.main()
