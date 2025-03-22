@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+prisma
+psycopg2-binary
+pydantic
+asyncpg
+pandas
+coverage
+pytest
+httpx

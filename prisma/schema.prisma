@@ -1,0 +1,22 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // Load database URL from .env
+}
+
+generator client {
+  provider                     = "prisma-client-py"
+  enable_experimental_decimal   = true  // ✅ Enable experimental Decimal type
+  recursive_type_depth          = -1    // Optional: Fix mypy warning
+}
+
+model PriceData {
+  id        Int      @id @default(autoincrement())
+  datetime  DateTime
+  open      Decimal
+  high      Decimal
+  low       Decimal
+  close     Decimal
+  volume    Int
+}
