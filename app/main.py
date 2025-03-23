@@ -43,7 +43,8 @@ async def get_data():
 
     records = await prisma.pricedata.find_many(order={'datetime': 'asc'})
 
-    await prisma.disconnect()  
+    if prisma.is_connected():
+        await prisma.disconnect()  
 
     if not records:
         raise HTTPException(status_code=404, detail="No price data found")

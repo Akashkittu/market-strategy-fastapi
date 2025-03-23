@@ -12,7 +12,8 @@ print(f"✅ DATABASE_URL Loaded: {DATABASE_URL}")  # Debugging step
 
 async def insert_data():
     prisma = Prisma()
-    await prisma.connect()  # ✅ Ensure connection to PostgreSQL
+    if not prisma.is_connected():  
+        await prisma.connect()  # ✅ Ensure connection to PostgreSQL
 
     print("✅ Connected to Database Successfully!")
 
